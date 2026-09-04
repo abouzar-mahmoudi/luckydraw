@@ -1,0 +1,52 @@
+# قرعه‌کشی — Apache config (XAMPP / WAMP / Laragon / LAMP)
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_env.c>
+    SetEnv LD_REWRITE 1
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Tell the app that pretty URLs work
+    RewriteRule .* - [E=LD_REWRITE:1]
+
+    # Never expose storage / app internals or project files
+    RewriteRule ^(storage|app)(/|$) - [F,L]
+    RewriteRule (^|/)\.(?!well-known) - [F,L]
+    RewriteRule \.(md|sqlite|json|lock|sh|bat|conf|example\.php)$ - [F,L]
+
+    # Static files & real PHP entry points are served directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Everything else goes through the front controller
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(woff2?|ttf|svg|css|js)$">
+        Header set Cache-Control "public, max-age=604800"
+    </FilesMatch>
+</IfModule>
+
+# Only the two front controllers may run as PHP (defense in depth; the
+# rewrite rules above already block app/, storage/ and project files)
+<IfModule mod_authz_core.c>
+    <FilesMatch "\.(php|phtml)$">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "^(index|api)\.php$">
+        Require all granted
+    </FilesMatch>
+</IfModule>
+
+# API bodies are capped at 512KB by the app; cap the HTTP layer at 1MB
+LimitRequestBody 1048576
+
+<IfModule mod_mime.c>
+    AddType font/woff2 .woff2
+    AddType image/svg+xml .svg
+    AddCharset UTF-8 .php .css .js .svg
+</IfModule>

@@ -1,0 +1,10 @@
+storage/*
+!storage/.gitignore
+!storage/.htaccess
+config.php
+.DS_Store
+Thumbs.db
+*.log
+
+# patch leftovers
+*.rej
